@@ -2084,7 +2084,7 @@ export default class Views {
     }
     ztoolkit.Prompt.register([
       {
-        name: "高能进度条",
+        name: "Reading Progress",
         label: "Style",
         when: () => {
           // 有条目，且条目有阅读时间
@@ -2103,7 +2103,7 @@ export default class Views {
           prompt.inputNode.placeholder = item.getField("title")
           const record = this.storage.get(item, "readingTime")
           if (!record || !record.data || Object.keys(record.data).length == 0) {
-            prompt.showTip("这里一片荒芜~")
+            prompt.showTip("Nothing here yet~")
             return
           }
           const box = ztoolkit.UI.createElement(document, "div", {
@@ -2182,7 +2182,7 @@ export default class Views {
         }
       },
       {
-        name: "迁移旧版数据",
+        name: "Migrate Legacy Data",
         label: "Style",
         when: () => {
           let items = ZoteroPane.getSelectedItems()
@@ -2190,7 +2190,7 @@ export default class Views {
         },
         callback: async (prompt) => {
           // 迁移数据逻辑
-          const tipNode = prompt.showTip("感谢您长时间对Style的支持，数据正在迁移中，请耐心等待！")
+          const tipNode = prompt.showTip("Thank you for your long-time support of Style. Data migration is in progress, please wait...")
           tipNode.style.position = "relative"
           let progress = ztoolkit.UI.createElement(
             document,
@@ -2247,14 +2247,14 @@ export default class Views {
           // @ts-ignore
           prompt.exit()
           prompt.showTip(
-            `数据迁移完成!\n\n` +
-            `从安装Style开始，它与您共同阅读了${ids.length}篇文献，总用时${(totalTime / 60 / 60).toFixed(2)}小时。\n\n` +
-            `你走过的路，每一步都算数。`
+            `Data migration complete!\n\n` +
+            `Since you installed Style, it has accompanied you through ${ids.length} papers, for a total of ${(totalTime / 60 / 60).toFixed(2)} hours.\n\n` +
+            `Every step of the way has counted.`
           )
         }
       },
       {
-        name: "标签",
+        name: "Tags",
         label: "Style",
         when: () => {
           let item = getItem() as _ZoteroItem
@@ -2407,7 +2407,7 @@ export default class Views {
         /**
          * 实现标注颜色组，可以新创建新组，组内可以新建新的标注颜色
          */
-        name: "标注",
+        name: "Annotations",
         label: "Style",
         when: () => {
           return Zotero.Prefs.get(`${config.addonRef}.function.annotationColors.enable`) as boolean
@@ -2835,7 +2835,7 @@ export default class Views {
         }
       },
       {
-        name: "期刊标签",
+        name: "Journal Tags",
         label: "Style",
         callback: (prompt) => {
           let secretKey = Zotero.Prefs.get(`${config.addonRef}.easyscholar.secretKey`) as string
@@ -2889,8 +2889,8 @@ export default class Views {
                   {
                     type: "click",
                     listener: () => {
-                      new ztoolkit.ProgressWindow("提示", { closeOtherProgressWindows: true, closeTime: 3000 })
-                        .createLine({ text: "已为您在浏览器打开申请密钥教程，请参考配置", type:"default" })
+                      new ztoolkit.ProgressWindow("Notice", { closeOtherProgressWindows: true, closeTime: 3000 })
+                        .createLine({ text: "The key application tutorial has been opened in your browser. Please refer to it for setup.", type:"default" })
                         .show()
                       Zotero.launchURL("https://github.com/MuiseDestiny/zotero-style/releases/tag/2.5.1")
                       Zotero.launchURL("http://xhslink.com/d5E72o")
@@ -2960,7 +2960,7 @@ export default class Views {
         },
       },
       {
-        name: "设置为插件储存条目",
+        name: "Set as Addon Storage Item",
         when: () => {
           let item = getItem()
           return item?.getField("title").includes("Addon") as boolean
@@ -2971,7 +2971,7 @@ export default class Views {
           if ("item" in this.storage) {
             this.storage.item = item
           }
-          prompt.showTip(`设置成功，该条目下有${item.getNotes().length}条记录。`)
+          prompt.showTip(`Set successfully. This item has ${item.getNotes().length} record(s).`)
         }
       }
     ])

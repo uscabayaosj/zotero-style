@@ -1,10 +1,10 @@
 {
   "addons": {
-    "zoterostyle@polygon.org": {
+    "zoterostyle-loom@uscabayaosj.github.io": {
       "updates": [
         {
           "version": "2.6.8",
-          "update_link": "https://github.com/MuiseDestiny/zotero-style/releases/latest/download/zotero-style.xpi",
+          "update_link": "https://github.com/uscabayaosj/zotero-style/releases/latest/download/zotero-style.xpi",
           "applications": {
             "gecko": {
               "strict_min_version": "60.0"
@@ -13,7 +13,7 @@
         },
         {
           "version": "2.6.8",
-          "update_link": "https://github.com/MuiseDestiny/zotero-style/releases/latest/download/zotero-style.xpi",
+          "update_link": "https://github.com/uscabayaosj/zotero-style/releases/latest/download/zotero-style.xpi",
           "applications": {
             "zotero": {
               "strict_min_version": "6.999"

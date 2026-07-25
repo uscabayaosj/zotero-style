@@ -98,6 +98,26 @@ pref("extensions.zotero.__addonRef__.storage.filename", "");
 pref("extensions.zotero.__addonRef__.easyscholar.secretKey", "");
 
 
+// ═══════════════════════════════════════
+// LOOM Integration defaults
+// ═══════════════════════════════════════
+
+// Feature #3: LOOM Status column
+pref("extensions.zotero.__addonRef__.function.loomStatusColumn.enable", true);
+
+// Feature #4: Obsidian export — set to your PhDVault path
+// Users should set this to: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/PhDVault
+pref("extensions.zotero.__addonRef__.loom.vaultPath", "");
+
+// Feature #6: LOOM view presets
+pref("extensions.zotero.__addonRef__.function.loomPresets.enable", true);
+
+// Feature #8: LOOM quick filter
+pref("extensions.zotero.__addonRef__.loomFilter.active", false);
+pref("extensions.zotero.__addonRef__.loomFilter.level", "all");
+
+// Feature #5: Graph LOOM mode — enabled by adding "loom" to modeFunction
+// (no separate pref needed, uses existing graphView.enable)
 
 
 

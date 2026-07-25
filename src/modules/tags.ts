@@ -1,4 +1,5 @@
 import { config } from "../../package.json";
+import { LOOM_TAG_COLORS, LOOM_EMOJI_PREFIXES, isLoomEmojiTag, COLOR_TO_LOOM_TAG } from "./loom";
 var ColorRNA = require('color-rna');
 
 /**
@@ -357,10 +358,10 @@ export class Tags {
       .forEach((item: Zotero.Item) => {
         plainTags = plainTags.concat(item.getTags().map(i => i.tag))
       })
-    // TODO: 提供设置，可以不以#开头
+    // Include # tags (original behavior) and LOOM emoji-prefixed tags
     plainTags = plainTags
       .filter((tag: string) => {
-        return Tags.getTagMatch(tag)
+        return Tags.getTagMatch(tag) || isLoomEmojiTag(tag)
       })
     if (func) {
       plainTags = plainTags.filter((tag: string) => {
@@ -380,9 +381,15 @@ export class Tags {
     const linkSymbol = Zotero.Prefs.get(`${config.addonRef}.nestedTags.linkSymbol`) as string
     let nestedTags = {}
     for (let i = 0; i < this.plainTags.length; i++) {
-      // tag是Zotero原始标签，比如`#数学/微积分`
+      // tag是Zotero原始标签，比如`#数学/微积分` or `📁 01 Sovereignty`
       let plainTag = this.plainTags[i]
-      let splitTags = plainTag.replace(/^#\s*/, "").split(linkSymbol)
+      // Strip # prefix (original behavior) or keep emoji prefix intact
+      let stripped = plainTag.replace(/^#\s*/, "")
+      let splitTags = stripped.split(linkSymbol)
+      // For LOOM emoji tags without / separator, treat as single-level category
+      if (isLoomEmojiTag(plainTag) && splitTags.length === 1) {
+        splitTags = [plainTag]  // Use full tag as the category name
+      }
       // _nestedTags用于逐层获取数据引用
       let _nestedTags: any = nestedTags
       for (let j = 0; j < splitTags.length; j++) {
@@ -1319,6 +1326,9 @@ export class Tags {
         hsl[2] = 30
         const deepColor = c.HSL(hsl).getHex()
         const opacityColor = (opacity: number) => `rgba(${red}, ${green}, ${blue}, ${opacity})`
+        // LOOM: derive semantic tag label from annotation color
+        const loomTag = COLOR_TO_LOOM_TAG[color]
+        const loomLabel = loomTag ? ` · ${loomTag}` : ""
         const annoNode = ztoolkit.UI.appendElement({
           tag: "div",
           classList: ["annotation"],
@@ -1376,7 +1386,7 @@ export class Tags {
                     color: "rgba(0, 0, 0, .5)"
                   },
                   properties: {
-                    innerHTML: `<b>P${annoItem.annotationPageLabel}</b>`
+                    innerHTML: `<b>P${annoItem.annotationPageLabel}</b>${loomLabel}`
                   }
                 }
               ]

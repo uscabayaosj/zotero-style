@@ -67,7 +67,10 @@ async function onStartup() {
     views.initItemSelectListener(),
     views.addNumberToCollectionTree(),
     views.renderCreatorColumn(),
-    views.renderPublicationColumn()
+    views.renderPublicationColumn(),
+    // LOOM integration
+    views.createLoomStatusColumn(),
+    views.createObsidianExportMenu(),
   ]
   try {
     await Promise.all(tasks);
@@ -76,6 +79,9 @@ async function onStartup() {
   }
   await views.registerSwitchColumnsViewUI();
   await views.initTags();
+  // LOOM: create view presets and patch anthro journal data
+  views.createLoomViewPresets()
+  await views.patchAnthroPublicationTags()
   try {
     ZoteroPane.itemsView.tree._columns._updateVirtualizedTable()
     ztoolkit.ItemTree.refresh()

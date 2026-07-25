@@ -9,6 +9,7 @@ import Bubble from "./bubble";
 import { Tags } from "./tags";
 import LocalStorage from "./localStorage";
 import GraphView from "./graphView";
+import { getLoomTagColor, getLoomStatus, getLoomRoute, exportToObsidian, getAnthroRank, isLoomEmojiTag, COLOR_TO_LOOM_TAG } from "./loom";
 var ColorRNA = require('color-rna');
 
 
@@ -533,6 +534,9 @@ export default class Views {
           }
           tags.forEach(tagObj => {
             let tag = tagObj.tag, color = tagObj.color
+            // LOOM: override color with semantic tag color if available
+            const loomColor = getLoomTagColor(tagObj.tag)
+            if (loomColor) color = loomColor
             tag = Tags.getTagMatch(tag)
             if (tag) {
               let tagSpan = getTagSpan(tag, color)
@@ -1200,6 +1204,179 @@ export default class Views {
         }
       ]
     )
+  }
+
+  // ═══════════════════════════════════════════════
+  // LOOM Integration — Features #3, #4, #6, #7, #8
+  // ═══════════════════════════════════════════════
+
+  /**
+   * #3: LOOM Status column — shows pipeline stage based on tags + reading progress
+   */
+  public async createLoomStatusColumn() {
+    if (!Zotero.Prefs.get(`${config.addonRef}.function.loomStatusColumn.enable`) as boolean) { return }
+    const key = "LoomStatus"
+    await ztoolkit.ItemTree.register(
+      key,
+      "LOOM Status",
+      (
+        field: string,
+        unformatted: boolean,
+        includeBaseMapped: boolean,
+        item: Zotero.Item
+      ) => {
+        if (!item.isRegularItem()) return ""
+        const status = getLoomStatus(item)
+        return `${status.emoji} ${status.label}`
+      },
+      {
+        renderCellHook: (index: any, data: any, column: any) => {
+          const span = ztoolkit.UI.createElement(document, "span", {
+            namespace: "html",
+            styles: {
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.3em",
+              fontSize: "0.85em",
+            }
+          }) as HTMLSpanElement
+          if (!data) return span
+          const item = ZoteroPane.getSortedItems()[index]
+          const status = getLoomStatus(item)
+          span.appendChild(ztoolkit.UI.createElement(document, "span", {
+            styles: {
+              display: "inline-block",
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              backgroundColor: status.color,
+            }
+          }))
+          span.appendChild(ztoolkit.UI.createElement(document, "span", {
+            properties: { innerText: data }
+          }))
+          const route = getLoomRoute(item)
+          if (route) {
+            span.appendChild(ztoolkit.UI.createElement(document, "span", {
+              styles: { color: "#888", fontSize: "0.85em" },
+              properties: { innerText: `· ${route}` }
+            }))
+          }
+          return span
+        },
+      }
+    )
+    this.addLoomQuickFilter()
+  }
+
+  /**
+   * #8: Quick filter by LOOM status
+   */
+  public addLoomQuickFilter() {
+    this.filterFunctions.push((items: Zotero.Item[]) => {
+      const loomFilterActive = Zotero.Prefs.get(`${config.addonRef}.loomFilter.active`) as boolean
+      if (!loomFilterActive) return items
+      const filterLevel = Zotero.Prefs.get(`${config.addonRef}.loomFilter.level`) as string || "all"
+      if (filterLevel === "all") return items
+      return items.filter(item => {
+        if (!item.isRegularItem()) return true
+        const status = getLoomStatus(item)
+        return status.level === filterLevel
+      })
+    })
+  }
+
+  /**
+   * #4: Obsidian export — right-click menu item to export item to PhDVault
+   */
+  public async createObsidianExportMenu() {
+    const vaultPath = Zotero.Prefs.get(`${config.addonRef}.loom.vaultPath`) as string
+    if (!vaultPath) return
+    const inboxPath = `${vaultPath}/00 Inbox`
+    ztoolkit.Menu.register("item", {
+      tag: "menuitem",
+      id: "zotero-style-loom-export",
+      label: "📝 Export to Obsidian (LOOM)",
+      icon: `chrome://${config.addonRef}/content/icons/favicon.png`,
+      commandListener: async () => {
+        const items = ZoteroPane.getSelectedItems()
+        if (items.length === 0) return
+        for (const item of items) {
+          if (!item.isRegularItem()) continue
+          const { filename, content } = exportToObsidian(item)
+          try {
+            const file = new FileUtils.File(`${inboxPath}/${filename}`)
+            const ostream = FileUtils.openFileOutputStream(file)
+            const data = new TextEncoder().encode(content)
+            ostream.write(data, data.length)
+            ostream.close()
+            new ztoolkit.ProgressWindow(config.addonName)
+              .createLine({ text: `Exported: ${filename}`, type: "success" })
+              .show()
+          } catch (e) {
+            ztoolkit.log("LOOM export error:", e)
+            new ztoolkit.ProgressWindow(config.addonName)
+              .createLine({ text: `Export failed: ${e}`, type: "fail" })
+              .show()
+          }
+        }
+      },
+    })
+  }
+
+  /**
+   * #6: View Group presets — preconfigure workflow column layouts
+   */
+  public createLoomViewPresets() {
+    if (!Zotero.Prefs.get(`${config.addonRef}.function.loomPresets.enable`) as boolean) { return }
+    const prefKey = `${config.addonRef}.columnsViews`
+    let existing: any[]
+    try {
+      existing = JSON.parse(Zotero.Prefs.get(prefKey) as string)
+    } catch {
+      existing = []
+    }
+    if (existing.some((v: any) => v.name?.startsWith("LOOM"))) return
+    const loomPresets = [
+      {
+        name: "LOOM Reading",
+        content: "Title + progress, #Tags, Author, Date",
+        dataKeys: ["title", "TextTags", "firstCreator", "date"],
+      },
+      {
+        name: "LOOM Pipeline",
+        content: "LOOM Status, #Tags, Tags, Title",
+        dataKeys: ["LoomStatus", "TextTags", "tag", "title"],
+      },
+      {
+        name: "LOOM Writing",
+        content: "Title, #Tags (semantic), Rating, Publication",
+        dataKeys: ["title", "TextTags", "Rating", "PublicationTags"],
+      },
+    ]
+    const updated = [...existing, ...loomPresets]
+    Zotero.Prefs.set(prefKey, JSON.stringify(updated))
+  }
+
+  /**
+   * #7: Publication tags — add anthropology journal lookup
+   */
+  public async patchAnthroPublicationTags() {
+    const items = ZoteroPane.getSortedItems()
+    for (const item of items) {
+      if (!item.isRegularItem()) continue
+      const pubTitle = item.getField("publicationTitle")
+      if (!pubTitle) continue
+      const existing = this.localStorage.get(item, "publication")
+      if (existing && existing.anthro) continue
+      const anthroRank = getAnthroRank(pubTitle)
+      if (anthroRank) {
+        const data = existing || {}
+        data.anthro = anthroRank.rank
+        data.anthroColor = anthroRank.color
+        this.localStorage.set(item, "publication", data)
+      }
+    }
   }
 
   /**

@@ -1,6 +1,7 @@
 import { config } from "../../package.json";
 
 import Bubble from "./bubble";
+import { getLoomStatus, getSemanticTags, LOOM_TAG_COLORS } from "./loom";
 
 export default class GraphView {
   private renderer: any;
@@ -28,6 +29,7 @@ export default class GraphView {
       related: this.getGraphByRelatedLink.bind(this),
       author: this.getGraphByAuthorLink.bind(this),
       tag: this.getGraphByTagLink.bind(this),
+      loom: this.getGraphByLoomLink.bind(this),
     };
   }
 
@@ -312,6 +314,89 @@ export default class GraphView {
     return this.getGraphByItemArrLink(items, getTags)
   }
 
+  /**
+   * LOOM graph mode — clusters by shared semantic tags, colors nodes by LOOM status.
+   * Items sharing #claim, #evidence, etc. are linked. Node color = pipeline stage.
+   */
+  private getGraphByLoomLink(items: Zotero.Item[]) {
+    const nodes: Graph["nodes"] = {}
+    const graph: Graph = { nodes }
+    const semanticTagGroups: { [tag: string]: Set<Zotero.Item> } = {}
+
+    items.forEach((item) => {
+      const status = getLoomStatus(item)
+      const semanticTags = getSemanticTags(item)
+      nodes[item.id] = {
+        links: {},
+        type: "item",
+        // Store LOOM metadata for rendering
+        loomStatus: status.level,
+        loomColor: status.color,
+      }
+      // Group items by shared semantic tags
+      semanticTags.forEach(tag => {
+        if (!semanticTagGroups[tag]) semanticTagGroups[tag] = new Set()
+        semanticTagGroups[tag].add(item)
+      })
+    })
+
+    // Link items that share semantic tags (threshold: at least 1 shared tag)
+    const semanticTagKeys = Object.keys(semanticTagGroups)
+    for (let si = 0; si < semanticTagKeys.length; si++) {
+      const tag = semanticTagKeys[si]
+      const tagItems = semanticTagGroups[tag]
+      const itemsArr: Zotero.Item[] = []
+      tagItems.forEach((item: Zotero.Item) => { itemsArr.push(item) })
+      if (itemsArr.length < 2) continue
+      // Create a tag node for the shared concept
+      const tagNodeId = `loom:${tag}`
+      nodes[tagNodeId] = {
+        links: {},
+        type: "tag",
+        loomColor: LOOM_TAG_COLORS[tag] || "#9384D1",
+      }
+      itemsArr.forEach((item: Zotero.Item) => {
+        nodes[item.id].links[tagNodeId] = true
+        nodes[tagNodeId].links[item.id] = true
+      })
+      // Link items to each other through shared tags
+      for (let i = 0; i < itemsArr.length; i++) {
+        for (let j = i + 1; j < itemsArr.length; j++) {
+          nodes[itemsArr[i].id].links[itemsArr[j].id] = true
+          nodes[itemsArr[j].id].links[itemsArr[i].id] = true
+        }
+      }
+    }
+
+    // Also link items that share the same route tag (📁)
+    const routeGroups: { [route: string]: Zotero.Item[] } = {}
+    items.forEach(item => {
+      const route = item.getTags().find(t => t.tag.startsWith("📁"))
+      if (route) {
+        if (!routeGroups[route.tag]) routeGroups[route.tag] = []
+        routeGroups[route.tag].push(item)
+      }
+    })
+    const routeKeys = Object.keys(routeGroups)
+    for (let ri = 0; ri < routeKeys.length; ri++) {
+      const route = routeKeys[ri]
+      const itemsArr = routeGroups[route]
+      if (itemsArr.length < 2) continue
+      const routeNodeId = `loom:${route}`
+      nodes[routeNodeId] = {
+        links: {},
+        type: "tag",
+        loomColor: "#9384D1",
+      }
+      itemsArr.forEach((item: Zotero.Item) => {
+        nodes[item.id].links[routeNodeId] = true
+        nodes[routeNodeId].links[item.id] = true
+      })
+    }
+
+    return graph
+  }
+
   private async createContainer() {
     document.querySelectorAll("#graph").forEach(e => e.remove());
     document.querySelectorAll(".resizer").forEach(e => e.remove())
@@ -573,6 +658,7 @@ interface Graph {
     [id: string]: {
       links: { [id: string]: boolean },
       type: string;
+      [key: string]: any;  // Allow additional properties (loomStatus, loomColor, etc.)
     };
   };
 }

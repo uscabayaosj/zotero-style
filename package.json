@@ -59,10 +59,12 @@
   "devDependencies": {
     "@types/node": "^18.13.0",
     "compressing": "^1.7.0",
+    "concurrently": "^10.0.4",
     "cross-env": "^7.0.3",
     "esbuild": "^0.16.17",
     "release-it": "^15.6.0",
     "replace-in-file": "^6.3.5",
+    "typescript": "^7.0.2",
     "uglify-js": "^3.17.4",
     "zotero-types": "^0.1.5"
   }

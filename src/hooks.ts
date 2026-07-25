@@ -7,6 +7,7 @@ import { registerPrefsScripts, registerPrefs } from "./modules/prefs";
 import LocalStorage from "./modules/localStorage";
 
 async function onStartup() {
+  ztoolkit.log("LOOM: Zotero Style startup beginning...")
   registerPrefs();
   // Register the callback in Zotero as an item observer
   const notifierID = Zotero.Notifier.registerObserver(
@@ -95,7 +96,11 @@ async function onStartup() {
     ztoolkit.ItemTree.refresh()
   } catch { }
   await views.registerCommands()
-
+  // Confirm LOOM features loaded
+  ztoolkit.log("LOOM: all features initialized")
+  new ztoolkit.ProgressWindow(config.addonName)
+    .createLine({ text: "📦 Zotero Style LOOM loaded — 9 features active", type: "success" })
+    .show()
 
 }
 

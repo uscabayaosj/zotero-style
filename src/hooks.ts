@@ -79,9 +79,17 @@ async function onStartup() {
   }
   await views.registerSwitchColumnsViewUI();
   await views.initTags();
-  // LOOM: create view presets and patch anthro journal data
-  views.createLoomViewPresets()
-  await views.patchAnthroPublicationTags()
+  // LOOM: create view presets and patch anthro journal data (safely)
+  try {
+    views.createLoomViewPresets()
+  } catch (e) {
+    ztoolkit.log("LOOM: view presets init error", e)
+  }
+  try {
+    await views.patchAnthroPublicationTags()
+  } catch (e) {
+    ztoolkit.log("LOOM: anthro publication tags init error", e)
+  }
   try {
     ZoteroPane.itemsView.tree._columns._updateVirtualizedTable()
     ztoolkit.ItemTree.refresh()

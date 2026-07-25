@@ -7,7 +7,7 @@ import { registerPrefsScripts, registerPrefs } from "./modules/prefs";
 import LocalStorage from "./modules/localStorage";
 
 async function onStartup() {
-  Zotero.debug("LOOM: Zotero Style startup beginning...")
+  Zotero.logError("LOOM: Zotero Style startup beginning...")
   ztoolkit.log("LOOM: Zotero Style startup beginning...")
   registerPrefs();
   // Register the callback in Zotero as an item observer
@@ -37,7 +37,7 @@ async function onStartup() {
   // 初始化储存位置
   let storage
   const storageIn = Zotero.Prefs.get(`${config.addonRef}.storage.in`) as string
-  Zotero.debug(`LOOM: storage.in = "${storageIn}"`)
+  Zotero.logError(`LOOM: storage.in = "${storageIn}"`)
   if (storageIn == "note") {
     Zotero._AddonItemGlobal = Zotero._AddonItemGlobal || new AddonItem()
     const addonItem = Zotero._AddonItemGlobal
@@ -77,10 +77,10 @@ async function onStartup() {
   ]
   try {
     await Promise.all(tasks);
-    Zotero.debug("LOOM: all tasks completed (columns, graph, etc.)")
+    Zotero.logError("LOOM: all tasks completed (columns, graph, etc.)")
   } catch (e) {
     ztoolkit.log("ERROR", e)
-    Zotero.debug("LOOM: tasks failed: " + e)
+    Zotero.logError("LOOM: tasks failed: " + e)
   }
   await views.registerSwitchColumnsViewUI();
   await views.initTags();

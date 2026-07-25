@@ -63,6 +63,7 @@ function install(data, reason) { }
 
 async function startup({ id, version, resourceURI, rootURI }, reason) {
   await waitForZotero();
+  Zotero.logError(`LOOM bootstrap: startup called, id=${id}, rootURI=${rootURI}`)
 
   // String 'rootURI' introduced in Zotero 7
   if (!rootURI) {

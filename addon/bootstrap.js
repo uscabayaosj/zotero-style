@@ -16,26 +16,27 @@ var chromeHandle;
 // In Zotero 7, bootstrap methods are not called until Zotero is initialized, and the 'Zotero' is
 // automatically made available.
 async function waitForZotero() {
-  if (typeof Zotero != "undefined") {
-    await Zotero.initializationPromise;
-  }
-
-  // In Zotero 7, use Zotero.getMainWindow() instead of ChromeUtils.import
-  // which has been removed in newer Firefox versions
-  var windows, Services;
   try {
-    // First try the global Services (available in Zotero 7)
-    Services = globalThis.Services || window.Services;
-    if (!Services || !Services.wm) throw new Error("Services not available");
-  } catch(e) {
-    // Fallback: minimal Services via Components
-    Services = {
-      wm: Components.classes["@mozilla.org/appshell/window-mediator;1"]
-        .getService(Components.interfaces.nsIWindowMediator)
-    };
-  }
+    if (typeof Zotero != "undefined") {
+      await Zotero.initializationPromise;
+    }
 
-  var windows = Services.wm.getEnumerator("navigator:browser");
+    // In Zotero 7, use Zotero.getMainWindow() instead of ChromeUtils.import
+    // which has been removed in newer Firefox versions
+    var windows, Services;
+    try {
+      // First try the global Services (available in Zotero 7)
+      Services = globalThis.Services || window.Services;
+      if (!Services || !Services.wm) throw new Error("Services not available");
+    } catch(e) {
+      // Fallback: minimal Services via Components
+      Services = {
+        wm: Components.classes["@mozilla.org/appshell/window-mediator;1"]
+          .getService(Components.interfaces.nsIWindowMediator)
+      };
+    }
+
+    var windows = Services.wm.getEnumerator("navigator:browser");
   var found = false;
   while (windows.hasMoreElements()) {
     let win = windows.getNext();
@@ -71,6 +72,12 @@ async function waitForZotero() {
     });
   }
   await Zotero.initializationPromise;
+  } catch(e) {
+    // log the error that killed startup
+    try { Components.utils.reportError("LOOM bootstrap error: " + e + " " + e.stack); } catch(_){}
+    alert("LOOM bootstrap error: " + e);
+    throw e;
+  }
 }
 
 function install(data, reason) { }

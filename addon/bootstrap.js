@@ -20,10 +20,20 @@ async function waitForZotero() {
     await Zotero.initializationPromise;
   }
 
-  // In Zotero 7+, Services is a global — no need to ChromeUtils.import
-  var { Services } = typeof Services !== "undefined"
-    ? { Services }
-    : ChromeUtils.import("resource://gre/modules/Services.jsm");
+  // In Zotero 7, use Zotero.getMainWindow() instead of ChromeUtils.import
+  // which has been removed in newer Firefox versions
+  var windows, Services;
+  try {
+    // First try the global Services (available in Zotero 7)
+    Services = globalThis.Services || window.Services;
+    if (!Services || !Services.wm) throw new Error("Services not available");
+  } catch(e) {
+    // Fallback: minimal Services via Components
+    Services = {
+      wm: Components.classes["@mozilla.org/appshell/window-mediator;1"]
+        .getService(Components.interfaces.nsIWindowMediator)
+    };
+  }
 
   var windows = Services.wm.getEnumerator("navigator:browser");
   var found = false;
@@ -78,7 +88,10 @@ async function startup({ id, version, resourceURI, rootURI }, reason) {
     var aomStartup = Components.classes[
       "@mozilla.org/addons/addon-manager-startup;1"
     ].getService(Components.interfaces.amIAddonManagerStartup);
-    var manifestURI = Services.io.newURI(rootURI + "manifest.json");
+    // Use Components.classes for IO service (bypasses ChromeUtils.import deprecation)
+    var ioService = Components.classes["@mozilla.org/network/io-service;1"]
+      .getService(Components.interfaces.nsIIOService);
+    var manifestURI = ioService.newURI(rootURI + "manifest.json");
     chromeHandle = aomStartup.registerChrome(manifestURI, [
       ["content", "__addonRef__", rootURI + "chrome/content/"],
       ["locale", "__addonRef__", "en-US", rootURI + "chrome/locale/en-US/"],

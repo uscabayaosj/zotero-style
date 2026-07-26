@@ -107,7 +107,10 @@ async function startup({ id, version, resourceURI, rootURI }, reason) {
   };
   ctx._globalThis = ctx;
 
-  Services.scriptloader.loadSubScript(
+  // Use Components.classes for script loader (bypasses ChromeUtils.import deprecation)
+  var scriptLoader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
+    .getService(Components.interfaces.mozIJSSubScriptLoader);
+  scriptLoader.loadSubScript(
     `${rootURI}/chrome/content/scripts/index.js`,
     ctx
   );

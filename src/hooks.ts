@@ -7,7 +7,6 @@ import { registerPrefsScripts, registerPrefs } from "./modules/prefs";
 import LocalStorage from "./modules/localStorage";
 
 async function onStartup() {
-  alert("LOOM: plugin loaded successfully!")
   console.error("LOOM: onStartup called! Plugin is executing.")
   Zotero.logError("LOOM: Zotero Style startup beginning...")
   ztoolkit.log("LOOM: Zotero Style startup beginning...")

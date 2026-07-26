@@ -5,7 +5,7 @@ function install(data, reason) { }
 
 async function startup({ id, version, resourceURI, rootURI }, reason) {
   try {
-    alert("LOOM: bootstrap startup() called! id=" + id);
+    Components.utils.reportError("LOOM: bootstrap startup() called! id=" + id);
 
     // In Zotero 7, we don't need the complex waitForZotero pattern
     // Zotero is already available
@@ -45,8 +45,7 @@ async function startup({ id, version, resourceURI, rootURI }, reason) {
       ctx
     );
   } catch(e) {
-    try { Components.utils.reportError("LOOM bootstrap error: " + e + " " + e.stack); } catch(_){}
-    alert("LOOM bootstrap error: " + e);
+    Components.utils.reportError("LOOM bootstrap error: " + e + " " + e.stack);
     throw e;
   }
 }

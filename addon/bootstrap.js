@@ -20,7 +20,11 @@ async function waitForZotero() {
     await Zotero.initializationPromise;
   }
 
-  var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+  // In Zotero 7+, Services is a global — no need to ChromeUtils.import
+  var { Services } = typeof Services !== "undefined"
+    ? { Services }
+    : ChromeUtils.import("resource://gre/modules/Services.jsm");
+
   var windows = Services.wm.getEnumerator("navigator:browser");
   var found = false;
   while (windows.hasMoreElements()) {

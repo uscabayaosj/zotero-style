@@ -76,6 +76,7 @@ async function waitForZotero() {
 function install(data, reason) { }
 
 async function startup({ id, version, resourceURI, rootURI }, reason) {
+  alert("LOOM: bootstrap startup() called! id=" + id)
   await waitForZotero();
   Zotero.logError(`LOOM bootstrap: startup called, id=${id}, rootURI=${rootURI}`)
 
